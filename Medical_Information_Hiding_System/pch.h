@@ -8,7 +8,14 @@
 
 #ifndef PCH_H
 #define PCH_H
-
+#define USER "username"
+#define PWD "password"
 // TODO: 添加要在此处预编译的标头
-
+const int MAXDATANUM = 100;//最大数据数量
+const int QINUM = 3;//准标识符数量
+//敏感属性分组
+const char TopSecret[2][20] = { {"HIV"},{"Cancer"} };
+const char Secret[2][20] = { {"Phthisis"},{"Hepatitis"} };
+const char LessSecret[2][20] = { {"Heart disease"},{"Asthma"} };
+const char NonSecret[2][20] = { {"Flu"},{"Indigestion"} };
 #endif //PCH_H

@@ -22,7 +22,7 @@ struct Patient
 	char health[20];//敏感信息：健康状况
 	char Sq_ID[10];//敏感组ID
 	float weight;//权重
-	int total;//总计，由于int是直接省去小数部分，符合判定需要。
+	float total;//总计，由于int是直接省去小数部分，符合判定需要。
 	bool operator==(const Patient& rhs)//操作运算符重载：==表示两个结构体变量中的所有准标识符均相等
 	{
 		return (strcmp(age, rhs.age) == 0) && (strcmp(region, rhs.region) == 0) && (strcmp(postcode, rhs.postcode) == 0);
@@ -33,7 +33,7 @@ struct Patient
 void login() 
 {
 	std::cout << "欢迎使用本医疗信息隐藏系统\n";
-	printf("须知\n本系统目前所能处理的最大数据容量为100条数据");
+	printf("须知\n本系统目前所能处理的最大数据容量为100条数据\n");
 	char user[17];
 	char pwd[21];
 	int count = 0;
@@ -74,7 +74,9 @@ void parameter_input(int *k,int *p,int *a)
 	}
 	else if (select == 3)
 	{
-		printf("【帮助】");
+		printf("【帮助】\n本系统当前版本：V1.0\n【地域限制】:仅适用于东莞和广州地区的病人数据\n【疾病信息限制】:仅收录了HIV、Cancer、Phthisis、Hepatitis、Heart disease、Ashthma、Flu、Indigestion且对大小写敏感\n对于存在的限制都将在下一版本更新中解除\n不便之处敬请原谅\n");
+		system("pause");
+		parameter_input(k, p, a);
 	}
 	else
 	{
@@ -87,9 +89,9 @@ void parameter_input(int *k,int *p,int *a)
 bool kcheck(int k)
 {
 	int flag = 1;//flag标志第i条数据是否满足k匿名检测，1表示真：满足，0表示假：不满足
-	for (int i = 0; i < 12 && flag == 1; i++)
+	for (int i = 0; i < r && flag == 1; i++)
 	{
-		for (int t = 0, j = 1; t < 12; t++)
+		for (int t = 0, j = 1; t < r; t++)
 		{
 			if (t == i)
 			{
@@ -119,7 +121,7 @@ void printdata(int r,char p,char a,char k)
 	//Resulttablename[23] = k;
 	CSpreadSheet sheet2("result.xls", Resulttablename);
 	CStringArray headers;
-	headers.Add("ID"); headers.Add("年龄"); headers.Add("地区"); headers.Add("邮编");
+	/*headers.Add("ID");*/ headers.Add("年龄"); headers.Add("地区"); headers.Add("邮编");
 	headers.Add("健康状况");	headers.Add("敏感组ID");	headers.Add("权重");	headers.Add("总计");
 	sheet2.BeginTransaction();	
 	sheet2.AddHeaders(headers);
@@ -129,8 +131,8 @@ void printdata(int r,char p,char a,char k)
 		char buf1[5];
 		snprintf(buf1, sizeof(buf1), "%f", data[i].weight);
 		char buf2[5];
-		snprintf(buf2, sizeof(buf2), "%d", data[i].total);
-		row.Add(data[i].id); row.Add(data[i].age); row.Add(data[i].region); row.Add(data[i].postcode); row.Add(data[i].health); row.Add(data[i].Sq_ID); row.Add(buf1); row.Add(buf2);
+		snprintf(buf2, sizeof(buf2), "%f", data[i].total);
+		/*row.Add(data[i].id);*/ row.Add(data[i].age); row.Add(data[i].region); row.Add(data[i].postcode); row.Add(data[i].health); row.Add(data[i].Sq_ID); row.Add(buf1); row.Add(buf2);
 		sheet2.AddRow(row);
 	}
 	sheet2.Commit();
@@ -374,15 +376,19 @@ int readdata(char filename[20],char tablename[20])
 		if(strcmp(data[i-1].health,TopSecret[0])==0|| (strcmp(data[i - 1].health, TopSecret[1]) == 0))
 		{
 			strncpy_s(data[i - 1].Sq_ID, "One", sizeof(data[i - 1].Sq_ID));
+			data[i - 1].weight = 0;
 		}else if (strcmp(data[i - 1].health, Secret[0]) == 0 || (strcmp(data[i - 1].health, Secret[1]) == 0))
 		{
 			strncpy_s(data[i - 1].Sq_ID, "Two", sizeof(data[i - 1].Sq_ID));
+			data[i - 1].weight = 1.0 / 3;
 		}else if (strcmp(data[i - 1].health, LessSecret[0]) == 0 || (strcmp(data[i - 1].health, LessSecret[1]) == 0))
 		{
 			strncpy_s(data[i - 1].Sq_ID, "Three", sizeof(data[i - 1].Sq_ID));
+			data[i - 1].weight = 2.0 / 3;
 		}else if (strcmp(data[i - 1].health, NonSecret[0]) == 0 || (strcmp(data[i - 1].health, NonSecret[1]) == 0))
 		{
 			strncpy_s(data[i - 1].Sq_ID, "Four", sizeof(data[i - 1].Sq_ID));
+			data[i - 1].weight = 1;
 		}
 		else
 		{
@@ -390,6 +396,44 @@ int readdata(char filename[20],char tablename[20])
 		}
 	}
 	return sheet1.GetTotalRows()-1;
+}
+
+void counttotal()
+{
+	for (int i = 0; i < r; i++)
+	{
+		data[i].total += data[i].weight;
+		for (int j = i+1; j < r; j++)
+		{
+			if(data[i]==data[j])
+			{
+				data[i].total += data[j].weight;
+				data[j].total += data[i].weight;
+			}
+		}
+	}
+}
+
+
+int tcheck(int p)
+{
+	for (int i = 0; i < r; i++)
+	{
+		if (data[i].total<p)
+		{
+			return 0;
+		}
+	}
+	return 1;
+}
+
+void sensitive(int p)
+{
+	counttotal();
+	while (tcheck(p) == 0)
+	{
+		generalization(count());
+	}
 }
 
 
@@ -409,7 +453,9 @@ int main()
 	parameter_input(&k,&p,&a);//用户输入
 	r=readdata(filename, tablename);//读数据
 	datafly(k);
+	sensitive(p);
 	printdata(r, p, a, k);//输出数据
+	system("pause");
 	return 0;
 }
 
@@ -418,7 +464,7 @@ int main()
 
 // 入门提示: 
 //   1. 使用解决方案资源管理器窗口添加/管理文件
-//   2. 使用团队资源管理器窗口连接到源代码管理
+//   2. 使用团队资源管理器窗口连接到源代码管理...../
 //   3. 使用输出窗口查看生成输出和其他消息
 //   4. 使用错误列表窗口查看错误
 //   5. 转到“项目”>“添加新项”以创建新的代码文件，或转到“项目”>“添加现有项”以将现有代码文件添加到项目
